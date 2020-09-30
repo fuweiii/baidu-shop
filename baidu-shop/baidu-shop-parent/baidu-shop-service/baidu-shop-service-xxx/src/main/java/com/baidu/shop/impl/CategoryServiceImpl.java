@@ -3,24 +3,21 @@ package com.baidu.shop.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.baidu.shop.base.BaseApiService;
 import com.baidu.shop.base.Result;
-import com.baidu.shop.dto.CategoryBrandDTO;
 import com.baidu.shop.entity.BrandEntity;
 import com.baidu.shop.entity.CategoryBrandEntity;
 import com.baidu.shop.entity.CategoryEntity;
 import com.baidu.shop.entity.SpecgroupEntity;
 import com.baidu.shop.mapper.*;
 import com.baidu.shop.service.CategoryService;
-import com.baidu.shop.utils.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @ClassName CategoryServiceImpl
@@ -35,13 +32,10 @@ public class CategoryServiceImpl extends BaseApiService implements CategoryServi
 
     @Resource
     private CategoryMapper categoryMapper;
-
     @Resource
     private CategoryBrandMapper categoryBrandMapper;
-
     @Resource
     private BrandMapper brandMapper;
-
     @Resource
     private SpecGroupMapper specGroupMapper;
 
@@ -55,6 +49,14 @@ public class CategoryServiceImpl extends BaseApiService implements CategoryServi
         List<CategoryEntity> select = categoryMapper.select(categoryEntity);
 
         return this.setResultSuccess(select);
+    }
+
+    @Override
+    public Result<List<CategoryEntity>> getCategoryByIdList(String cidsStr) {
+
+        List<Integer> cidList = Arrays.asList(cidsStr.split(",")).stream().map(cidStr -> Integer.parseInt(cidStr)).collect(Collectors.toList());
+        List<CategoryEntity> list = categoryMapper.selectByIdList(cidList);
+        return this.setResultSuccess(list);
     }
 
     @Transactional
@@ -86,13 +88,16 @@ public class CategoryServiceImpl extends BaseApiService implements CategoryServi
     @Transactional
     @Override
     public Result<JSONObject> del(Integer id) {
-        String msg = "";
         //通过当前id查询分类信息
         CategoryEntity categoryEntity = categoryMapper.selectByPrimaryKey(id);
         //验证id是否有效
         //if (ObjectUtil.isNull(categoryEntity)) return this.setResultError("id有误");
         //判断当前节点是否为父节点
         //if (categoryEntity.getIsParent() == 1) return this.setResultError(msg += "Error!!!当前为父级节点,无法被删除");
+
+        //分类删除判断是否存在规格组参数
+        this.removeCate(id);
+
         //构建条件查询  通过当前被删除节点的parentid查询数据
         Example example = new Example(CategoryEntity.class);
         example.createCriteria().andEqualTo("parentId",categoryEntity.getParentId());
@@ -104,6 +109,20 @@ public class CategoryServiceImpl extends BaseApiService implements CategoryServi
             parentCateEntity.setIsParent(0);
             categoryMapper.updateByPrimaryKeySelective(parentCateEntity);
         }
+        categoryMapper.deleteByPrimaryKey(id);//执行删除
+        return this.setResultSuccess();
+    }
+
+    @Override
+    public Result<List<CategoryEntity>> getByBrand(Integer brandId) {
+
+        List<CategoryEntity> list = categoryMapper.getByBrandId(brandId);
+        return this.setResultSuccess(list);
+    }
+
+    //del摘出来的方法
+    private Result<JSONObject> removeCate(Integer id){
+        String msg = "";
         //查询中间表
         CategoryBrandEntity dto = new CategoryBrandEntity();
         dto.setCategoryId(id);
@@ -128,17 +147,7 @@ public class CategoryServiceImpl extends BaseApiService implements CategoryServi
         example3.createCriteria().andEqualTo("cid",specgroupEntity.getCid());
         List<SpecgroupEntity> specgroupEntities = specGroupMapper.selectByExample(example3);
         if(!specgroupEntities.isEmpty()) return this.setResultError(msg += "当前分类下存在规格组,被规格组绑定");
-
-        categoryMapper.deleteByPrimaryKey(id);//执行删除
         return this.setResultSuccess();
     }
-
-    @Override
-    public Result<List<CategoryEntity>> getByBrand(Integer brandId) {
-
-        List<CategoryEntity> list = categoryMapper.getByBrandId(brandId);
-        return this.setResultSuccess(list);
-    }
-
 
 }

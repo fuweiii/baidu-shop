@@ -1,0 +1,15 @@
+server:
+  port: 8300
+
+spring:
+  elasticsearch:
+    rest:
+      uris: 119.45.206.200:9200
+  application:
+    name: search-server
+  jackson:
+    default-property-inclusion: non_null #空值不返回
+
+ribbon:
+  eureka:
+    enable: true
