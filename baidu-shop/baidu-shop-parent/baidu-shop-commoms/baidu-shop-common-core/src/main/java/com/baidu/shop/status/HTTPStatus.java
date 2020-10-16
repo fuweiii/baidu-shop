@@ -16,4 +16,9 @@ public class HTTPStatus {
     public static final int OPERATION_ERROR = 5001;//操作失败
 
     public static final int PARAMS_VALIDATE_ERROR = 5002;//参数校验失败
+
+    public static final int PHONE_VALIDATE_ERROR = 5003;//手机验证号校验失败
+
+    public static final int VALID_USER_PASSWORD_ERROR = 5004;//用户名密码校验失败
+
 }

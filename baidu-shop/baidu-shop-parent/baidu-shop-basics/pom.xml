@@ -17,6 +17,7 @@
         <module>baidu-shop-basics-eureka-server</module>
         <module>baidu-shop-basic-zuul-server</module>
         <module>baidu-shop-basic-upload-server</module>
+        <module>baidu-shop-basic-user-oauth</module>
     </modules>
 
 </project>

@@ -3,27 +3,23 @@ package com.baidu.shop.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.baidu.shop.base.BaseApiService;
 import com.baidu.shop.base.Result;
+import com.baidu.shop.componen.MrRabbitMQ;
+import com.baidu.shop.constant.MqMessageConstant;
 import com.baidu.shop.dto.BrandDTO;
 import com.baidu.shop.dto.SkuDTO;
 import com.baidu.shop.dto.SpuDTO;
 import com.baidu.shop.entity.*;
 import com.baidu.shop.feign.SearchFeign;
 import com.baidu.shop.feign.SpuFeign;
-import com.baidu.shop.global.GlobalException;
 import com.baidu.shop.global.ZiDingYi;
 import com.baidu.shop.mapper.*;
 import com.baidu.shop.service.BrandService;
 import com.baidu.shop.service.GoodsService;
-import com.baidu.shop.service.TemplateService;
-import com.baidu.shop.status.HTTPStatus;
 import com.baidu.shop.utils.BaiduBeanUtil;
 import com.baidu.shop.utils.ObjectUtil;
-import com.baidu.shop.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import org.elasticsearch.action.admin.cluster.storedscripts.TransportDeleteStoredScriptAction;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -32,7 +28,6 @@ import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -54,19 +49,18 @@ public class GoodsServiceImpl extends BaseApiService implements GoodsService {
     private BrandService brandService;
     @Resource
     private CategoryMapper categoryMapper;
-
     @Resource
     private SkuMapper skuMapper;
     @Resource
     private StockMapper stockMapper;
     @Resource
     private SpuDetailMapper spuDetailMapper;
-
     @Autowired
     private SpuFeign spuFeign;
-
     @Autowired
     private SearchFeign searchFeign;
+    @Autowired
+    private MrRabbitMQ mrRabbitMQ;
 
     @Override
     public Result<List<SpuDTO>> getSpuInfo(SpuDTO spuDTO) {
@@ -99,8 +93,6 @@ public class GoodsServiceImpl extends BaseApiService implements GoodsService {
     @Transactional
     @Override
     public Result<JSONObject> postSpu(SpuDTO spuDTO) {
-        System.out.println(spuDTO);
-
         Date date = new Date();
         //spu
         SpuEntity spuEntity = BaiduBeanUtil.copyProperties(spuDTO, SpuEntity.class);
@@ -120,11 +112,11 @@ public class GoodsServiceImpl extends BaseApiService implements GoodsService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
             @Override
             public void afterCommit() {
-                spuFeign.createStaticHTMLTemplate(spuEntity.getId());
-                searchFeign.saveElasticSearchTemplate(spuEntity.getId());
+                mrRabbitMQ.send(spuEntity.getId() + "", MqMessageConstant.SPU_ROUT_KEY_SAVE);
+//                spuFeign.createStaticHTMLTemplate(spuEntity.getId());
+//                searchFeign.saveElasticSearchTemplate(spuEntity.getId());
             }
         });
-
         return this.setResultSuccess();
     }
 
@@ -168,13 +160,14 @@ public class GoodsServiceImpl extends BaseApiService implements GoodsService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
             @Override
             public void afterCommit() {
-                searchFeign.deleteGoodsBySpuId(spuId.toString());
-                File file = new File("E:\\static-html\\web\\"+spuId+".html");
-                if(file.exists()){
-                    file.delete();
-                }
-                spuFeign.createStaticHTMLTemplate(spuEntity.getId());
-                searchFeign.saveElasticSearchTemplate(spuEntity.getId());
+                mrRabbitMQ.send(spuEntity.getId() + "", MqMessageConstant.SPU_ROUT_KEY_UPDATE);
+//                searchFeign.deleteGoodsBySpuId(spuId.toString());
+//                File file = new File("E:\\static-html\\web\\"+spuId+".html");
+//                if(file.exists()){
+//                    file.delete();
+//                }
+//                spuFeign.createStaticHTMLTemplate(spuEntity.getId());
+//                searchFeign.saveElasticSearchTemplate(spuEntity.getId());
             }
         });
 
@@ -200,11 +193,12 @@ public class GoodsServiceImpl extends BaseApiService implements GoodsService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
             @Override
             public void afterCommit() {
-                searchFeign.deleteGoodsBySpuId(spuId.toString());
-                File file = new File("E:\\static-html\\web\\"+spuId+".html");
-                if(file.exists()){
-                    file.delete();
-                }
+                mrRabbitMQ.send(spuId + "", MqMessageConstant.SPU_ROUT_KEY_DELETE);
+//                searchFeign.deleteGoodsBySpuId(spuId.toString());
+//                File file = new File("E:\\static-html\\web\\"+spuId+".html");
+//                if(file.exists()){
+//                    file.delete();
+//                }
             }
         });
 

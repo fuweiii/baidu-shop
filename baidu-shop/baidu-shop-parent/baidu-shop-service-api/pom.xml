@@ -17,6 +17,7 @@
         <module>baidu-shop-service-api-xxx</module>
         <module>baidu-shop-service-api-search</module>
         <module>baidu-shop-service-api-template</module>
+        <module>baidu-shop-service-api-user</module>
     </modules>
 
     <dependencies>
@@ -47,7 +48,7 @@
             <version>1.2.10</version>
         </dependency>
 
-        <!--2.3版本之后web删除了验证插件-->
+        <!-- Validation 2.3版本之后web删除了验证插件-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>

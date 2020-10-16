@@ -66,6 +66,18 @@
            <version>2.5.1</version>
        </dependency>
 
+       <dependency>
+           <groupId>com.mrshop.luosimao</groupId>
+           <artifactId>jersey-bundle</artifactId>
+           <version>1.0.0</version>
+       </dependency>
+
+       <dependency>
+           <groupId>com.mrshop.luosimao</groupId>
+           <artifactId>json-org</artifactId>
+           <version>1.0.0</version>
+       </dependency>
+
        <!--帮助开发人员快速生成API文档-->
        <dependency>
            <groupId>io.springfox</groupId>

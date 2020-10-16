@@ -117,12 +117,27 @@ public class ShopElasticsearchServiceImpl extends BaseApiService implements Shop
     }
 
     @Override
+    public Result<JSONObject> saveData(Integer spuId) {
+        List<GoodsDoc> goodsDoc = this.esGoodsInfo(spuId);
+        elasticsearchRestTemplate.save(goodsDoc.get(0));
+        return this.setResultSuccess();
+    }
+
+    @Override
+    public Result<JSONObject> delData(Integer spuId) {
+        elasticsearchRestTemplate.delete(spuId + "",GoodsDoc.class);
+        return this.setResultSuccess();
+    }
+
+    @Override
+    //FUWEIII
     public Result<JSONObject> deleteGoodsBySpuId(String spuId) {
         elasticsearchRestTemplate.delete(spuId,GoodsDoc.class);
         return this.setResultSuccess();
     }
 
     @Override
+    //FUWEIII
     public Result<JSONObject> saveElasticSearchTemplate(Integer id) {
         List<GoodsDoc> goodsDoc = this.esGoodsInfo(id);
         elasticsearchRestTemplate.save(goodsDoc.get(0));
